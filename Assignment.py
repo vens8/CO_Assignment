@@ -95,14 +95,16 @@ def process(command):
                 s += '0' * (16 - 5 - 3 * types[opcodes[words[0]]])
                 for i in range(1, types[opcodes[words[0]]] + 1):
                     s += registers[words[i]]
-            if words[0] == 'add':  # addition
+            elif words[0] == 'add':  # addition
                 registers_values[words[1]] = registers_values[words[2]] + registers_values[words[3]]
-            if words[0] == 'sub':  # subtraction
+            elif words[0] == 'sub':  # subtraction
                 registers_values[words[1]] = registers_values[words[2]] - registers_values[words[3]]
-            if words[0] == 'ld':  # load
+            elif words[0] == 'ld':  # load
                 registers_values[words[1]] = words[2][1::]
-            if words[0] == 'st':  # store
+            elif words[0] == 'st':  # store
                 variables[words[2]] = registers_values[words[1]]
+            elif words[0] == 'mul':
+                registers_values[words[1]] = registers_values[words[2]] * registers_values[words[3]]
     else:
         if words[2][0] == '$':
             s += opcodes['mov1']
