@@ -68,6 +68,9 @@ registers_values = {
     'FLAGS': 0000000000000000,
 }
 
+# Dictionary to store the values of the memory addresses
+variables = {}
+
 
 # Convert a string decimal into the equivalent binary of custom bits
 def binary(number, bit):
@@ -81,18 +84,25 @@ def process(command):
     s = ""
     words = list(command.split())
     if words[0] != 'mov':
-        s += opcodes[words[0]]
-        if types[opcodes[words[0]]] > 0:  # generate the machine code
-            s += '0' * (16 - 5 - 3 * types[opcodes[words[0]]])
-            for i in range(1, types[opcodes[words[0]]] + 1):
-                s += registers[words[i]]
-
-        if words[0] == 'add':  # addition
-            registers_values[words[1]] = registers_values[words[2]] + registers_values[words[3]]
-        if words[0] == 'sub':  # subtraction
-            registers_values[words[1]] = registers_values[words[2]] - registers_values[words[3]]
-        if words[0] == 'ld':
-            registers_values[words[1]] = words[2][1::]
+        if words[0] == 'var':  # Create a new variable and store a default value as 0.
+            variables[words[1]] = 0000000000000000
+        elif words[0][-1] == ':':
+            pass
+            # Add code for labels
+        else:  # try to use 'try/except' for catching dictionary key errors for error generation test cases.
+            s += opcodes[words[0]]
+            if types[opcodes[words[0]]] > 0:  # generate the machine code
+                s += '0' * (16 - 5 - 3 * types[opcodes[words[0]]])
+                for i in range(1, types[opcodes[words[0]]] + 1):
+                    s += registers[words[i]]
+            if words[0] == 'add':  # addition
+                registers_values[words[1]] = registers_values[words[2]] + registers_values[words[3]]
+            if words[0] == 'sub':  # subtraction
+                registers_values[words[1]] = registers_values[words[2]] - registers_values[words[3]]
+            if words[0] == 'ld':  # load
+                registers_values[words[1]] = words[2][1::]
+            if words[0] == 'st':  # store
+                variables[words[2]] = registers_values[words[1]]
     else:
         if words[2][0] == '$':
             s += opcodes['mov1']
@@ -107,8 +117,9 @@ def process(command):
 
             registers_values[words[1]] = registers_values[words[2]]
 
-    print(s)
+    print(s)  # print the machine code for every command
     # print(registers_values)
+    # print(variables)
 
 
 with open('input.txt', 'rt') as inputfile:
