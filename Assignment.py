@@ -32,11 +32,12 @@ types = {
     '00111': 2,
     '01101': 2,
     '01110': 2,
-    '00101': 2,
-    '01111': 1,
-    '10000': 1,
-    '10001': 1,
-    '10010': 1,
+    '00101': 1,
+    '01111': 0,
+    '10000': 0,
+    '00100': 1,
+    '10001': 0,
+    '10010': 0,
     '00110': 3,
     '01010': 3,
     '01011': 3,
@@ -45,7 +46,7 @@ types = {
 }
 
 registers = {
-    'R0': '001',
+    'R0': '000',
     'R1': '001',
     'R2': '010',
     'R3': '011',
@@ -54,14 +55,60 @@ registers = {
     'R6': '110',
     'FLAGS': '111'
 }
-R0 = R1 = R2 = R3 = R4 = R5 = R6 = R7 = None
+
+# Initial register values
+registers_values = {
+    'R0': 0000000000000000,
+    'R1': 0000000000000000,
+    'R2': 0000000000000000,
+    'R3': 0000000000000000,
+    'R4': 0000000000000000,
+    'R5': 0000000000000000,
+    'R6': 0000000000000000,
+    'FLAGS': 0000000000000000,
+}
+
+
+# Convert a string decimal into the equivalent binary of custom bits
+def binary(number, bit):
+    binary = bin(int(number)).replace('0b', '')[::-1]
+    while len(binary) < bit:
+        binary += '0'
+    return binary[::-1]
 
 
 def process(command):
+    s = ""
     words = list(command.split())
     if words[0] != 'mov':
-        
+        s += opcodes[words[0]]
+        if types[opcodes[words[0]]] > 0:  # generate the machine code
+            s += '0' * (16 - 5 - 3 * types[opcodes[words[0]]])
+            for i in range(1, types[opcodes[words[0]]] + 1):
+                s += registers[words[i]]
 
+        if words[0] == 'add':  # addition
+            registers_values[words[1]] = registers_values[words[2]] + registers_values[words[3]]
+        if words[0] == 'sub':  # subtraction
+            registers_values[words[1]] = registers_values[words[2]] - registers_values[words[3]]
+        if words[0] == 'ld':
+            registers_values[words[1]] = words[2][1::]
+    else:
+        if words[2][0] == '$':
+            s += opcodes['mov1']
+            s += registers[words[1]]
+            s += binary(words[2][1::], 8)
+        else:
+            s += opcodes['mov2']
+            if types[opcodes['mov2']] > 0:
+                s += '0' * (16 - 5 - 3 * types[opcodes['mov2']])
+                for i in range(1, types[opcodes['mov2']] + 1):
+                    s += registers[words[i]]
+
+            registers_values[words[1]] = registers_values[words[2]]
+
+    print(s)
+    # print(registers_values)
 
 
 with open('input.txt', 'rt') as inputfile:
