@@ -1,3 +1,4 @@
+
 opcodes = {
     'add': '00000',
     'sub': '00001',
@@ -103,8 +104,20 @@ def process(command):
                 registers_values[words[1]] = words[2][1::]
             elif words[0] == 'st':  # store
                 variables[words[2]] = registers_values[words[1]]
-            elif words[0] == 'mul':
+            elif words[0] == 'mul': # multiply
                 registers_values[words[1]] = registers_values[words[2]] * registers_values[words[3]]
+            elif words[0] == 'div':  # division
+                registers_values[words[1]] = registers_values[words[1]] / registers_values[words[2]] 
+            elif words[0] == 'rs':  # Right Shift
+                registers_values[words[1]] = registers_values[words[1]] >> int(words[2][1::])
+            elif words[0] == 'ls':  # left Shift
+                registers_values[words[1]] = registers_values[words[1]] << int(words[2][1::])
+            elif words[0] == 'xor':  # Exclusive OR
+                registers_values[words[1]] = registers_values[words[2]] ^ registers_values[words[3]]
+            elif words[0] == 'or':   # OR operator
+                registers_values[words[1]] = registers_values[words[2]] | registers_values[words[3]]
+            elif words[0] == 'and':  # AND operator
+                registers_values[words[1]] = registers_values[words[2]] & registers_values[words[3]]
     else:
         if words[2][0] == '$':
             s += opcodes['mov1']
