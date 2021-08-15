@@ -305,14 +305,21 @@ with open('input.txt', 'rt') as inputfile:
         parse(command)
         # parse(command)
         command = inputfile.readline()
-
-with open('input.txt', 'rt') as inputfile:
-    command = inputfile.readline()
-    while command:
-        process(command)
-        # parse(command)
-        command = inputfile.readline()
-
+if(len(halt_instructions)==0):
+    print("No halt statement is present")
+elif(len(halt_instructions)>1):
+    print("Multiple halt statements")
+elif(halt_instructions[0]==line_number):
+    if(len(errors)==0):
+        with open('input.txt', 'rt') as inputfile:
+            command = inputfile.readline()
+            while command:
+                process(command)
+                # parse(command)
+                command = inputfile.readline()
+    else:
+        for key in errors:
+            print(f'Error in line {key}: {errors[key]}')
 # Test working of binary() for overflow values
 # print(binary(int(binary('65000', 16), 2) * int(binary('64000', 16), 2), 16))
 # print(len(binary(int(binary('65000', 16), 2) + int(binary('64000', 16), 2), 16)))
@@ -320,6 +327,3 @@ with open('input.txt', 'rt') as inputfile:
 # print(labels)
 # print(registers_values)
 # print(variables)
-if len(errors) != 0:
-    for key in errors:
-        print(f'Error in line {key}: {errors[key]}')
