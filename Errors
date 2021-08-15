@@ -7,4 +7,4 @@ Some error generating cases:
    check until the end of the file to see for more hlt statements (as it's possible to have multiple hlt statements).
    "If you detect that you have an hlt instruction in the mid (you found that there are more instructions left after you encountered hlt), you can 
    stop at that point and print the error which says that hlt was found in the mid."
-5. 
+5. Spaces in the name of the labels
