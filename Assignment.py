@@ -124,8 +124,7 @@ def parse(line):
 
         elif words[0] == 'mov' or words[0] in opcodes.keys():
             line_number += 1
-            if words[0] == 'add' or words[0] == 'sub' or words[0] == 'mul' or words[0] == 'xor' or words[0] == 'or' or \
-                    words[0] == 'and':
+            if words[0] == 'add' or words[0] == 'sub' or words[0] == 'mul' or words[0] == 'xor' or words[0] == 'or' or words[0] == 'and':
                 if len(words) == 4:  # to check the number of arguments are correct or not
                     if words[1] in registers.keys() and words[2] in registers.keys() and words[3] in registers.keys():
                         mem_address += 1
@@ -174,7 +173,6 @@ def parse(line):
                         elif words[2] in variables.keys():
                             mem_address += 1
                     else:
-                        print(line)
                         errors[line_number] = "wrong type of arguments are used"
                 else:
                     errors[line_number] = "wrong number of arguments are present"
