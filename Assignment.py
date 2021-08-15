@@ -81,7 +81,7 @@ flag_process = False
 
 
 def parse(line):
-    global line_number, mem_address, flag_parse, errors
+    global line_number, mem_address, flag_parse, errors, variables
     words = list(line.split())
     if line != '\n':
         if ':' in line and words[0][-1] == ':':
@@ -114,8 +114,8 @@ def parse(line):
                 errors[line_number] = "wrong syntax used for instructions(wrong number of arguments are present)"
 
         elif words[0] == 'mov' or words[0] in opcodes.keys():
-            if words[0] == 'add' or words[0] == 'sub' or words[0] == 'mul' or words[0] == 'xor' or words[0] == 'or' or \
-                    words[0] == 'and':
+            line_number += 1
+            if words[0] == 'add' or words[0] == 'sub' or words[0] == 'mul' or words[0] == 'xor' or words[0] == 'or' or words[0] == 'and':
                 if len(words) == 4:  # to check the number of arguments are correct or not
                     if words[1] in registers.keys() and words[2] in registers.keys() and words[3] in registers.keys():
                         mem_address += 1
@@ -138,7 +138,8 @@ def parse(line):
 
             elif words[0] == 'mov':
                 if len(words) == 3:
-                    if (words[1] in registers and words[2][0] == '$') or (words[1] in registers and words[2] in registers):
+                    if (words[1] in registers and words[2][0] == '$') or (
+                            words[1] in registers and words[2] in registers):
                         if words[1] in registers and words[2][0] == '$':
                             if int(words[2][1:]) >= 0 and int(words[2][1:]) <= 255:
                                 mem_address += 1
@@ -153,9 +154,10 @@ def parse(line):
 
             elif words[0] == 'ld' or words[0] == 'st':
                 if len(words) == 3:
-                    if words[1] in registers.keys() and words[2] in labels.keys() and words[2] not in variables.keys():
+                    if words[1] in registers.keys() and words[2] in labels.keys() or words[2] in variables.keys():
                         mem_address += 1
                     else:
+                        print(line)
                         errors[line_number] = "wrong type of arguments are used"
                 else:
                     errors[line_number] = "wrong number of arguments are present"
@@ -177,10 +179,9 @@ def parse(line):
                     mem_address += 1
                 else:
                     errors[line_number] = "Wrong syntax used (incorrect number of arguments)"
-            line_number += 1
         else:
-            errors[line_number] = 'Typos in instruction name'
             line_number += 1
+            errors[line_number] = 'Typos in instruction name'
 
 
 # Convert a string decimal into the equivalent binary of custom bits
@@ -195,23 +196,19 @@ def binary(number, bit):
     return binary[::-1]
 
 
-def process(command):
+def process(line):
+    global mem_address, line_number, variables, labels
     s = ""
-    words = list(command.split())
+    words = list(line.split())
     registers_values['FLAGS'] = '0000000000000000'
 
     if words[0] != 'mov':
         if words[0] == 'var':  # Create a new variable and store a default value as 0.
-            variables[words[1]] = 0000000000000000
-        elif words[0][-1] == ':':
             pass
-            # Add code for labels
-        else:  # try to use 'try/except' for catching dictionary key errors for error generation test cases.
+        elif ':' in line:
+            process(line[len(words[0]) + 1:])
+        else:
             s += opcodes[words[0]]
-            if types[opcodes[words[0]]] > 0:  # generate the machine code
-                s += '0' * (16 - 5 - 3 * types[opcodes[words[0]]])
-                for i in range(1, types[opcodes[words[0]]] + 1):
-                    s += registers[words[i]]
 
             if words[0] == 'add':  # addition
                 if int(registers_values[words[2]], 2) + int(registers_values[words[3]], 2) > 65535:
@@ -219,21 +216,31 @@ def process(command):
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) + int(registers_values[words[3]], 2),
                         16)  # Store only 16 bits even for overflow
-                    print(s)
+                s += '0' * 2
+                for i in range(1, 4):
+                    s += registers[words[i]]
+                print(s)
 
             elif words[0] == 'sub':  # subtraction
                 if int(registers_values[words[2]], 2) - int(registers_values[words[3]], 2) < 0:
                     registers_values['FLAGS'] = '0000000000001000'
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) - int(registers_values[words[3]], 2), 16)
-                    print(s)
+                s += '0' * 2
+                for i in range(1, 4):
+                    s += registers[words[i]]
+                print(s)
 
             elif words[0] == 'ld':  # load
                 registers_values[words[1]] = words[2][1::]
+                s += registers[words[1]]
+                s += binary(mem_address, 8)
                 print(s)
 
             elif words[0] == 'st':  # store
                 variables[words[2]] = registers_values[words[1]]
+                s += registers[words[1]]
+                s += binary(mem_address, 8)
                 print(s)
 
             elif words[0] == 'mul':  # multiply
@@ -261,7 +268,12 @@ def process(command):
                 else:
                     registers_values['FLAGS'] = '0000000000000001'
             elif words[0] == 'jmp':
-                pass
+                s += '000'
+                if words[1] in labels.keys():
+                    s += labels[words[1]]
+                elif words[1] in variables.keys():
+                    s += variables[words[1]]
+                print(s)
             elif words[0] == 'jlt':
                 if registers_values['FLAGS'] == '0000000000000100':
                     print(s)
@@ -269,9 +281,10 @@ def process(command):
                 if registers_values['FLAGS'] == '0000000000000010':
                     print(s)
             elif words[0] == 'je':
-                if (registers_values['FLAGS'] == '0000000000000001'):
+                if registers_values['FLAGS'] == '0000000000000001':
                     print(s)
             elif words[0] == 'hlt':
+                s += '00000000000'
                 print(s)
 
     else:
@@ -279,16 +292,18 @@ def process(command):
             s += opcodes['mov1']
             s += registers[words[1]]
             s += binary(words[2][1::], 8)
+            print(s)
         else:
             s += opcodes['mov2']
             if types[opcodes['mov2']] > 0:
                 s += '0' * (16 - 5 - 3 * types[opcodes['mov2']])
                 for i in range(1, types[opcodes['mov2']] + 1):
                     s += registers[words[i]]
-
             registers_values[words[1]] = registers_values[words[2]]
+            print(s)
 
-    print(s)  # print the machine code for every command
+
+    # print(s)  # print the machine code for every command
     # print(registers_values)
     # print(variables)
 
@@ -305,12 +320,16 @@ with open('input.txt', 'rt') as inputfile:
         parse(command)
         # parse(command)
         command = inputfile.readline()
-if(len(halt_instructions)==0):
-    print("No halt statement is present")
-elif(len(halt_instructions)>1):
-    print("Multiple halt statements")
-elif(halt_instructions[0]==line_number):
-    if(len(errors)==0):
+
+# print(line_number)
+if len(halt_instructions) == 0:
+    print("Error: Halt instruction not found")
+elif len(halt_instructions) > 1:
+    print("Error: Multiple halt instructions found")
+elif halt_instructions[0] != line_number:
+    print("Error: Halt instruction not found at the end")
+else:
+    if len(errors) == 0:
         with open('input.txt', 'rt') as inputfile:
             command = inputfile.readline()
             while command:
@@ -320,6 +339,7 @@ elif(halt_instructions[0]==line_number):
     else:
         for key in errors:
             print(f'Error in line {key}: {errors[key]}')
+
 # Test working of binary() for overflow values
 # print(binary(int(binary('65000', 16), 2) * int(binary('64000', 16), 2), 16))
 # print(len(binary(int(binary('65000', 16), 2) + int(binary('64000', 16), 2), 16)))
