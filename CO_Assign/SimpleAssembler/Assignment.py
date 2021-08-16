@@ -73,7 +73,7 @@ registers_values = {
     'R6': '0000000000000000',
     'FLAGS': '0000000000000000',
 }
-line_number = 1
+line_number = 0
 mem_address = 0
 # Dictionary to store the values of the memory addresses
 variables = {}  # its key will be the variable name and value will be the memory address
@@ -88,39 +88,46 @@ temp_variables = {}
 
 def parse(line):
     global line_number, mem_address, flag_parse, errors, variables
+    print(line, mem_address)
     words = list(line.split())
-    if line != '\n':
+    if len(words) != 0 and line != '\n':
         if ':' in line and words[0][-1] == ':':
+            if len(words) < 2:
+                line_number += 1
+                errors[line_number] = "Error: Instruction not found"
+                return
             if flag_parse:
                 line_number += 1
+                flag_parse = False
             if words[0][:len(words[0]) - 1] not in labels and words[0][:len(words[0]) - 1] not in variables:
-                if (words[0][:len(words[0]) - 1] in temp_labels):
+                if words[0][:len(words[0]) - 1] in temp_labels:
                     del temp_labels[words[0][:len(words[0]) - 1]]
                 labels[words[0][:len(words[0]) - 1]] = mem_address
             else:
                 errors[line_number] = "Label name already in use."
+                return
             if ':' in line:
                 flag_parse = False
                 parse(line[len(words[0]) + 1:])
             else:
                 flag_parse = True
-                parse(line[len(words[0]) + 1:])
                 mem_address += 1
                 line_number += 1
+                parse(line[len(words[0]) + 1:])
 
         elif words[0] == 'var':
             line_number += 1
             if len(words) == 2:
                 if words[1] in variables.keys() or words[1] in labels.keys():
-                    errors[line_number] = "Wrong syntax used for instructions"
+                    errors[line_number] = "Variable name already in use."
                 elif words[1] not in variables.keys() and words[1] not in labels.keys():
                     if (words[1] in temp_variables):
                         del temp_variables[words[1]]
                     variables[words[1]] = -1
                 else:
-                    errors[line_number] = "wrong syntax used for instructions"
+                    errors[line_number] = "Wrong syntax used for instructions"
             else:
-                errors[line_number] = "wrong syntax used for instructions(wrong number of arguments are present)"
+                errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments))"
 
         elif words[0] == 'mov' or words[0] in opcodes.keys():
             line_number += 1
@@ -129,9 +136,9 @@ def parse(line):
                     if words[1] in registers.keys() and words[2] in registers.keys() and words[3] in registers.keys():
                         mem_address += 1
                     else:
-                        errors[line_number] = "wrong syntax used for instructions"
+                        errors[line_number] = "Wrong syntax used for instructions"
                 else:
-                    errors[line_number] = "wrong syntax used for instructions (wrong number of arguments are present)"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments))"
 
             elif words[0] == 'rs' or words[0] == 'ls':
                 if len(words) == 3:
@@ -139,11 +146,11 @@ def parse(line):
                         if words[2][0] == '$' and int(words[2][1:]) >= 0 and int(words[2][1:]) <= 255:
                             mem_address += 1
                         else:
-                            errors[line_number] = "wrong value of immediate used or wrong syntax used for instructions"
+                            errors[line_number] = "Wrong value of immediate used or wrong syntax used for instructions"
                     else:
-                        errors[line_number] = "wrong syntax used for instructions"
+                        errors[line_number] = "Wrong syntax used for instructions"
                 else:
-                    errors[line_number] = "wrong syntax used for instructions (wrong number of arguments are present"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
 
             elif words[0] == 'mov':
                 if len(words) == 3:
@@ -153,13 +160,13 @@ def parse(line):
                             if int(words[2][1:]) >= 0 and int(words[2][1:]) <= 255:
                                 mem_address += 1
                             else:
-                                errors[line_number] = "Illegal immediate value is used"
+                                errors[line_number] = "Illegal immediate value type used"
                         else:
                             mem_address += 1
                     else:
-                        errors[line_number] = "Wrong type of arguments are used"
+                        errors[line_number] = "Wrong type of arguments used"
                 else:
-                    errors[line_number] = "Wrong number of arguments are used"
+                    errors[line_number] = "Wrong number of arguments used"
 
             elif words[0] == 'ld' or words[0] == 'st':
                 if len(words) == 3:
@@ -173,20 +180,20 @@ def parse(line):
                         elif words[2] in variables.keys():
                             mem_address += 1
                     else:
-                        errors[line_number] = "wrong type of arguments are used"
+                        errors[line_number] = "Wrong type of arguments used"
                 else:
-                    errors[line_number] = "wrong number of arguments are present"
+                    errors[line_number] = "Invalid number of arguments"
 
             elif words[0] == 'jmp' or words[0] == 'jlt' or words[0] == 'jgt' or words[0] == 'je':
                 if len(words) == 2:
                     if words[1] not in labels.keys():
                         temp_labels[words[1]] = mem_address
                     if words[1] in variables.keys():
-                        errors[line_number] = "wrong syntax used for instructions"
+                        errors[line_number] = "Wrong syntax used for instructions"
                     else:
                         mem_address += 1
                 else:
-                    errors[line_number] = "wrong syntax for instruction (Wrong number of arguments are used)"
+                    errors[line_number] = "Wrong syntax for instruction (Wrong number of arguments are used)"
 
             elif words[0] == 'hlt':
                 if len(words) == 1:
@@ -197,6 +204,10 @@ def parse(line):
         else:
             line_number += 1
             errors[line_number] = 'Typos in instruction name'
+            return
+    else:
+        print("Error: No instruction found")
+        return
 
 
 # Convert a string decimal into the equivalent binary of custom bits
@@ -262,7 +273,10 @@ def process(line):
                     registers_values['FLAGS'] = '0000000000001000'
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) * int(registers_values[words[3]], 2), 16)
-                    print(s)
+                s += '0' * 2
+                for i in range(1, 4):
+                    s += registers[words[i]]
+                print(s)
 
             elif words[0] == 'div':  # division
                 if (registers_values[words[2]]) != '0000000000000000' and int(
@@ -271,80 +285,107 @@ def process(line):
                         int(registers_values[words[1]], 2) / int(registers_values[words[2]], 2), 16)
                     registers_values['R1'] = binary(
                         int(registers_values[words[1]], 2) % int(registers_values[words[2]], 2), 16)
+                    s += '0' * 5
+                    for i in range(1, 3):
+                        s += registers[words[i]]
+                    print(s)
                 else:
                     print("Error: Division by zero (not defined)")
 
             elif words[0] == 'ls':  # left shift
                 if int(registers_values[words[1]], 2) << int(words[2][1:]) < 65535:
                     registers_values[words[1]] = binary(int(registers_values[words[1]], 2) << int(words[2][1:], 10), 16)
+                    s += registers[words[1]]
+                    s += binary(words[2][1::], 8)
                     print(s)
 
             elif words[0] == 'rs':  # right shift
                 if int(registers_values[words[1]], 2) >> int(words[2][1:]) < 65535:
                     registers_values[words[1]] = binary(int(registers_values[words[1]], 2) >> int(words[2][1:], 10), 16)
+                    s += registers[words[1]]
+                    s += binary(words[2][1::], 8)
                     print(s)
 
             elif words[0] == 'xor':  # Exclusive OR
                 if int(registers_values[words[2]], 2) ^ int(registers_values[words[3]], 2) < 65535:
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) ^ int(registers_values[words[3]], 2), 16)
+                    s += '0' * 2
+                    for i in range(1, 4):
+                        s += registers[words[i]]
                     print(s)
 
             elif words[0] == 'or':  # Bitwise OR
                 if int(registers_values[words[2]], 2) | int(registers_values[words[3]], 2) < 65535:
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) | int(registers_values[words[3]], 2), 16)
+                    s += '0' * 2
+                    for i in range(1, 4):
+                        s += registers[words[i]]
                     print(s)
 
             elif words[0] == 'and':  # Bitwise AND
                 if int(registers_values[words[2]], 2) & int(registers_values[words[3]], 2) < 65535:
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) & int(registers_values[words[3]], 2), 16)
+                    s += '0' * 2
+                    for i in range(1, 4):
+                        s += registers[words[i]]
                     print(s)
 
             elif words[0] == 'not':
-                str = ''
+                string = ''
                 registers_values['FLAGS'] = '0000000000000000'
                 for i in registers_values[words[2]]:
                     if i == '1':
-                        str += '0'
+                        string += '0'
                     else:
-                        str += '1'
-                registers_values[words[1]] = str + ""
-                print(s)
-
-            elif words[0] == 'cmp':
+                        string += '1'
+                registers_values[words[1]] = string + ""
                 s += '0' * 5
                 for i in range(1, 3):
                     s += registers[words[i]]
                 print(s)
+
+            elif words[0] == 'cmp':
                 if int(registers_values[words[1]]) > int(registers_values[words[2]]):
                     registers_values['FLAGS'] = '0000000000000010'
                 elif int(registers_values[words[1]]) < int(registers_values[words[2]]):
                     registers_values['FLAGS'] = '0000000000000100'
                 else:
                     registers_values['FLAGS'] = '0000000000000001'
+                s += '0' * 5
+                for i in range(1, 3):
+                    s += registers[words[i]]
+                print(s)
 
             elif words[0] == 'jmp':
                 s += '000'
                 if words[1] in labels.keys():
                     s += binary("% s" % labels[words[1]], 8)
-
-                    #   elif words[1] in variables.keys():
-                    #       s += variables[words[1]]
                     print(s)
 
             elif words[0] == 'jlt':
-                if registers_values['FLAGS'] == '0000000000000100':
+                # if registers_values['FLAGS'] == '0000000000000100':
+                s += '000'
+                if words[1] in labels.keys():
+                    s += binary("% s" % labels[words[1]], 8)
                     print(s)
 
             elif words[0] == 'jgt':
-                if registers_values['FLAGS'] == '0000000000000010':
+                # if registers_values['FLAGS'] == '0000000000000010':
+                s += '000'
+                if words[1] in labels.keys():
+                    s += binary("% s" % labels[words[1]], 8)
                     print(s)
 
             elif words[0] == 'je':
-                if registers_values['FLAGS'] == '0000000000000001':
+                # if registers_values['FLAGS'] == '0000000000000001':
+                s += '000'
+                if words[1] in labels.keys():
+                    s += binary("% s" % labels[words[1]], 8)
                     print(s)
+
             elif words[0] == 'hlt':
                 s += '00000000000'
                 print(s)
@@ -370,18 +411,24 @@ def process(line):
     # print(variables)
 
 
-for line in stdin:
-    if line == '':  # stop loop when empty line is read
-        break
-    else:
-        parse(line)
-'''
 with open('input.txt', 'rt') as inputfile:
     command = inputfile.readline()
     while command:
         parse(command)
         # parse(command)
         command = inputfile.readline()
+'''
+input_code = []
+
+while True:
+    try:
+        line = input()
+        input_code.append(line)
+    except EOFError:
+        break
+
+for line in input_code:
+    parse(line)
 '''
 # print(line_number)
 if len(halt_instructions) == 0:
@@ -398,19 +445,14 @@ else:
         if len(temp_variables) == 0:
             if len(temp_labels) == 0:  # this will ensure that there are no undefined labels
                 # print(mem_address)
-                for line in stdin:
-                    if line == '':  # If empty string is read then stop the loop
-                        break
-                    else:
-                        process(line)  # perform some operation(s) on given string'''
-                '''
                 with open('input.txt', 'rt') as inputfile:
                     command = inputfile.readline()
                     while command:
                         process(command)
                         # parse(command)
-                        command = inputfile.readline()'''
-
+                        command = inputfile.readline()
+                '''for line in input_code:
+                    process(line)'''
             else:
                 for i in temp_labels:
                     print(f"Error: {i} is not defined")
