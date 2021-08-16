@@ -88,7 +88,6 @@ temp_variables = {}
 
 def parse(line):
     global line_number, mem_address, flag_parse, errors, variables
-    print(line, mem_address)
     words = list(line.split())
     if len(words) != 0 and line != '\n':
         if ':' in line and words[0][-1] == ':':
@@ -127,7 +126,7 @@ def parse(line):
                 else:
                     errors[line_number] = "Wrong syntax used for instructions"
             else:
-                errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments))"
+                errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
 
         elif words[0] == 'mov' or words[0] in opcodes.keys():
             line_number += 1
@@ -138,7 +137,7 @@ def parse(line):
                     else:
                         errors[line_number] = "Wrong syntax used for instructions"
                 else:
-                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments))"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
 
             elif words[0] == 'rs' or words[0] == 'ls':
                 if len(words) == 3:
@@ -166,7 +165,7 @@ def parse(line):
                     else:
                         errors[line_number] = "Wrong type of arguments used"
                 else:
-                    errors[line_number] = "Wrong number of arguments used"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
 
             elif words[0] == 'ld' or words[0] == 'st':
                 if len(words) == 3:
@@ -182,7 +181,16 @@ def parse(line):
                     else:
                         errors[line_number] = "Wrong type of arguments used"
                 else:
-                    errors[line_number] = "Invalid number of arguments"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
+
+            elif words[0] == 'cmp' or words[0] == 'not':
+                if len(words) == 3:
+                    if words[1] in registers.keys() and words[2] in registers.keys():
+                        mem_address += 1
+                    else:
+                        errors[line_number] = "Wrong type of arguments used"
+                else:
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
 
             elif words[0] == 'jmp' or words[0] == 'jlt' or words[0] == 'jgt' or words[0] == 'je':
                 if len(words) == 2:
@@ -193,14 +201,14 @@ def parse(line):
                     else:
                         mem_address += 1
                 else:
-                    errors[line_number] = "Wrong syntax for instruction (Wrong number of arguments are used)"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
 
             elif words[0] == 'hlt':
                 if len(words) == 1:
                     halt_instructions.append(line_number)
                     mem_address += 1
                 else:
-                    errors[line_number] = "Wrong syntax used (incorrect number of arguments)"
+                    errors[line_number] = "Wrong syntax used for instructions (Invalid number of arguments)"
         else:
             line_number += 1
             errors[line_number] = 'Typos in instruction name'
@@ -406,11 +414,8 @@ def process(line):
             registers_values[words[1]] = registers_values[words[2]]
             print(s)
 
-    # print(s)  # print the machine code for every command
-    # print(registers_values)
-    # print(variables)
 
-
+'''
 with open('input.txt', 'rt') as inputfile:
     command = inputfile.readline()
     while command:
@@ -429,7 +434,7 @@ while True:
 
 for line in input_code:
     parse(line)
-'''
+
 # print(line_number)
 if len(halt_instructions) == 0:
     print("Error: Halt instruction not found")
@@ -445,14 +450,14 @@ else:
         if len(temp_variables) == 0:
             if len(temp_labels) == 0:  # this will ensure that there are no undefined labels
                 # print(mem_address)
-                with open('input.txt', 'rt') as inputfile:
+                '''with open('input.txt', 'rt') as inputfile:
                     command = inputfile.readline()
                     while command:
                         process(command)
                         # parse(command)
-                        command = inputfile.readline()
-                '''for line in input_code:
-                    process(line)'''
+                        command = inputfile.readline()'''
+                for line in input_code:
+                    process(line)
             else:
                 for i in temp_labels:
                     print(f"Error: {i} is not defined")
@@ -462,11 +467,3 @@ else:
     else:
         for key in errors:
             print(f'Error in line {key}: {errors[key]}')
-
-# Test working of binary() for overflow values
-# print(binary(int(binary('65000', 16), 2) * int(binary('64000', 16), 2), 16))
-# print(len(binary(int(binary('65000', 16), 2) + int(binary('64000', 16), 2), 16)))
-
-# print(labels)
-# print(registers_values)
-# print(variables)
