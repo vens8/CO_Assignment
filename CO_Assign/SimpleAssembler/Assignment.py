@@ -82,7 +82,7 @@ halt_instructions = []  # this will store the various number of halt statements 
 errors = {}
 flag_parse = False
 flag_process = False
-temp_labels = {}
+temp_labels = {}  # temporary labels for testing
 temp_variables = {}
 
 
@@ -94,7 +94,6 @@ def parse(line):
             if len(words) < 2:
                 line_number += 1
                 errors[line_number] = "Error: Instruction not found"
-                return
             if flag_parse:
                 line_number += 1
                 flag_parse = False
@@ -104,7 +103,6 @@ def parse(line):
                 labels[words[0][:len(words[0]) - 1]] = mem_address
             else:
                 errors[line_number] = "Label name already in use."
-                return
             if ':' in line:
                 flag_parse = False
                 parse(line[len(words[0]) + 1:])
@@ -120,7 +118,7 @@ def parse(line):
                 if words[1] in variables.keys() or words[1] in labels.keys():
                     errors[line_number] = "Variable name already in use."
                 elif words[1] not in variables.keys() and words[1] not in labels.keys():
-                    if (words[1] in temp_variables):
+                    if words[1] in temp_variables:
                         del temp_variables[words[1]]
                     variables[words[1]] = -1
                 else:
@@ -212,10 +210,8 @@ def parse(line):
         else:
             line_number += 1
             errors[line_number] = 'Typos in instruction name'
-            return
     else:
-        print("Error: No instruction found")
-        return
+        errors[line_number] = "No instruction found"
 
 
 # Convert a string decimal into the equivalent binary of custom bits
@@ -231,7 +227,7 @@ def binary(number, bit):
 
 
 def process(line):
-    global mem_address, line_number, variables, labels
+    global mem_address, line_number, variables, labels, registers_values
     s = ""
     words = list(line.split())
     registers_values['FLAGS'] = '0000000000000000'
@@ -249,7 +245,7 @@ def process(line):
                     registers_values['FLAGS'] = '0000000000001000'
                     registers_values[words[1]] = binary(
                         int(registers_values[words[2]], 2) + int(registers_values[words[3]], 2),
-                        16)  # Store only 16 bits even for overflow
+                        16) + ""  # Store only 16 bits even for overflow
                 s += '0' * 2
                 for i in range(1, 4):
                     s += registers[words[i]]
@@ -259,7 +255,7 @@ def process(line):
                 if int(registers_values[words[2]], 2) - int(registers_values[words[3]], 2) < 0:
                     registers_values['FLAGS'] = '0000000000001000'
                     registers_values[words[1]] = binary(
-                        int(registers_values[words[2]], 2) - int(registers_values[words[3]], 2), 16)
+                        int(registers_values[words[2]], 2) - int(registers_values[words[3]], 2), 16) + ""
                 s += '0' * 2
                 for i in range(1, 4):
                     s += registers[words[i]]
@@ -280,7 +276,7 @@ def process(line):
                 if int(registers_values[words[2]], 2) * int(registers_values[words[3]], 2) < 65535:
                     registers_values['FLAGS'] = '0000000000001000'
                     registers_values[words[1]] = binary(
-                        int(registers_values[words[2]], 2) * int(registers_values[words[3]], 2), 16)
+                        int(registers_values[words[2]], 2) * int(registers_values[words[3]], 2), 16) + ""
                 s += '0' * 2
                 for i in range(1, 4):
                     s += registers[words[i]]
@@ -290,9 +286,9 @@ def process(line):
                 if (registers_values[words[2]]) != '0000000000000000' and int(
                         int(registers_values[words[1]], 10) / int(registers_values[words[2]], 10)) < 65535:
                     registers_values['R0'] = binary(
-                        int(registers_values[words[1]], 2) / int(registers_values[words[2]], 2), 16)
+                        int(registers_values[words[1]], 2) / int(registers_values[words[2]], 2), 16) + ""
                     registers_values['R1'] = binary(
-                        int(registers_values[words[1]], 2) % int(registers_values[words[2]], 2), 16)
+                        int(registers_values[words[1]], 2) % int(registers_values[words[2]], 2), 16) + ""
                     s += '0' * 5
                     for i in range(1, 3):
                         s += registers[words[i]]
@@ -305,6 +301,7 @@ def process(line):
                     registers_values[words[1]] = binary(int(registers_values[words[1]], 2) << int(words[2][1:], 10), 16)
                     s += registers[words[1]]
                     s += binary(words[2][1::], 8)
+                    registers_values[words[1]] = binary(int('0000000000000100', 2) << int('3'), 16) + ""
                     print(s)
 
             elif words[0] == 'rs':  # right shift
@@ -312,12 +309,13 @@ def process(line):
                     registers_values[words[1]] = binary(int(registers_values[words[1]], 2) >> int(words[2][1:], 10), 16)
                     s += registers[words[1]]
                     s += binary(words[2][1::], 8)
+                    registers_values[words[1]] = binary(int('0000000000000100', 2) << int('3'), 16) + ""
                     print(s)
 
             elif words[0] == 'xor':  # Exclusive OR
                 if int(registers_values[words[2]], 2) ^ int(registers_values[words[3]], 2) < 65535:
                     registers_values[words[1]] = binary(
-                        int(registers_values[words[2]], 2) ^ int(registers_values[words[3]], 2), 16)
+                        int(registers_values[words[2]], 2) ^ int(registers_values[words[3]], 2), 16) + ""
                     s += '0' * 2
                     for i in range(1, 4):
                         s += registers[words[i]]
@@ -326,7 +324,7 @@ def process(line):
             elif words[0] == 'or':  # Bitwise OR
                 if int(registers_values[words[2]], 2) | int(registers_values[words[3]], 2) < 65535:
                     registers_values[words[1]] = binary(
-                        int(registers_values[words[2]], 2) | int(registers_values[words[3]], 2), 16)
+                        int(registers_values[words[2]], 2) | int(registers_values[words[3]], 2), 16) + ""
                     s += '0' * 2
                     for i in range(1, 4):
                         s += registers[words[i]]
@@ -335,7 +333,7 @@ def process(line):
             elif words[0] == 'and':  # Bitwise AND
                 if int(registers_values[words[2]], 2) & int(registers_values[words[3]], 2) < 65535:
                     registers_values[words[1]] = binary(
-                        int(registers_values[words[2]], 2) & int(registers_values[words[3]], 2), 16)
+                        int(registers_values[words[2]], 2) & int(registers_values[words[3]], 2), 16) + ""
                     s += '0' * 2
                     for i in range(1, 4):
                         s += registers[words[i]]
@@ -403,7 +401,7 @@ def process(line):
             s += opcodes['mov1']
             s += registers[words[1]]
             s += binary(words[2][1::], 8)
-            registers_values[words[1]] = binary(words[2][1::], 16)
+            registers_values[words[1]] = binary(words[2][1::], 16) + ""
             print(s)
         else:
             s += opcodes['mov2']
@@ -411,9 +409,12 @@ def process(line):
                 s += '0' * (16 - 5 - 3 * types[opcodes['mov2']])
                 for i in range(1, types[opcodes['mov2']] + 1):
                     s += registers[words[i]]
-            registers_values[words[1]] = registers_values[words[2]]
+            registers_values[words[1]] = registers_values[words[2]] + ""
             print(s)
 
+    # print(s)  # print the machine code for every command
+    # print(registers_values)
+    # print(variables)
 
 '''
 with open('input.txt', 'rt') as inputfile:
@@ -437,11 +438,13 @@ for line in input_code:
 
 # print(line_number)
 if len(halt_instructions) == 0:
-    print("Error: Halt instruction not found")
+    print(f"Error in line {line_number}: Halt instruction not found")
 elif len(halt_instructions) > 1:
-    print("Error: Multiple halt instructions found")
+    print("Error: Multiple halt instructions found. ")
+    for line in halt_instructions:
+        print(f"Halt statement found at line {line}")
 elif halt_instructions[0] != line_number:
-    print("Error: Halt instruction not found at the end")
+    print(f"Error in line {line_number}: Halt instruction not found at the end")
 else:
     if len(errors) == 0:
         for i in variables:
@@ -450,20 +453,29 @@ else:
         if len(temp_variables) == 0:
             if len(temp_labels) == 0:  # this will ensure that there are no undefined labels
                 # print(mem_address)
-                '''with open('input.txt', 'rt') as inputfile:
+                '''
+                with open('input.txt', 'rt') as inputfile:
                     command = inputfile.readline()
                     while command:
                         process(command)
                         # parse(command)
-                        command = inputfile.readline()'''
+                        command = inputfile.readline()
+                '''
                 for line in input_code:
                     process(line)
             else:
                 for i in temp_labels:
-                    print(f"Error: {i} is not defined")
+                    print(f"Error in line {line_number}: {i} is not defined")
         else:
             for i in temp_variables:
-                print(f"Error: {i} is not defined")
-    else:
-        for key in errors:
-            print(f'Error in line {key}: {errors[key]}')
+                print(f"Error in line {line_number}: {i} is not defined")
+for key in errors:
+    print(f'Error in line {key}: {errors[key]}')
+
+# Test working of binary() for overflow values
+# print(binary(int(binary('65000', 16), 2) * int(binary('64000', 16), 2), 16))
+# print(len(binary(int(binary('65000', 16), 2) + int(binary('64000', 16), 2), 16)))
+
+# print(labels)
+# print(registers_values)
+# print(variables)
