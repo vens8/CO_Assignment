@@ -21,6 +21,7 @@ registers_values = {
     'FLAGS': '0000000000000000',
 }
 variables = {}
+mem_address = 0
 
 
 # Convert a string decimal into the equivalent binary of custom bits
@@ -36,6 +37,7 @@ def binary(number, bit):
 
 
 def process(line):
+    global mem_address, variables
     if line[:5] == '00000':  # Add
         if int(registers_values[registers[line[10:13]]], 2) + int(registers_values[registers[line[13:16]]], 2) > 65535:
             registers_values['FLAGS'] = '0000000000001000'
@@ -55,10 +57,10 @@ def process(line):
         registers_values[registers[line[10:13]]] = registers_values[registers[line[13:16]]]
 
     elif line[:5] == '00100':  # Load from variable to register
-        registers_values[registers[line[10:13]]] = variables[line[8:16]]
+        registers_values[registers[line[5:8]]] = variables[line[8:16]] + ""
 
     elif line[:5] == '00101':  # Store from register to variable
-        variables[line[8:16]] = registers_values[registers[line[10:13]]]
+        variables[line[8:16]] = registers_values[registers[line[5:8]]] + ""
 
     elif line[:5] == '01110':  # Compare
         if int(registers_values[registers[line[10:13]]], 2) > int(registers_values[registers[line[13:16]]], 2):
@@ -76,8 +78,10 @@ def process(line):
 
     elif line[:5] == '00111':  # Divide
         if int(registers_values[registers[line[10:13]]], 2) / int(registers_values[registers[line[13:16]]], 2) < 65535:
-            registers_values['R0'] = binary(int(registers_values[registers[line[10:13]]], 2) / int(registers_values[registers[line[13:16]]], 2), 16)
-            registers_values['R1'] = binary(int(registers_values[registers[line[10:13]]], 2) % int(registers_values[registers[line[13:16]]], 2), 16)
+            registers_values['R0'] = binary(
+                int(registers_values[registers[line[10:13]]], 2) / int(registers_values[registers[line[13:16]]], 2), 16)
+            registers_values['R1'] = binary(
+                int(registers_values[registers[line[10:13]]], 2) % int(registers_values[registers[line[13:16]]], 2), 16)
 
         else:
             registers_values['FLAGS'] = '0000000000001000'
@@ -118,54 +122,62 @@ def process(line):
         registers_values[registers[line[10:13]]] = string + ""
 
     elif line[:5] == '01111':  # Unconditional Jump
-        print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
-        return int(line[8:16], 2)
+        print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
+        mem_address = int(line[8:16], 2)
+        return mem_address
 
     elif line[:5] == '10000':  # jump if less than
         if registers_values['FLAGS'] == '0000000000000100':
-            print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
-            return int(line[8:16], 2)
-    
-    elif line[:5] == '10001':   #jump if greater than
+            print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
+            mem_address = int(line[8:16], 2)
+            return mem_address
+
+    elif line[:5] == '10001':  # jump if greater than
         if registers_values['FLAGS'] == '0000000000000010':
-            print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
-            return int(line[8:16], 2)
-    
-    elif line[:5] == '10010':   #jump if equal
+            print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
+            mem_address = int(line[8:16], 2)
+            return mem_address
+
+    elif line[:5] == '10010':  # jump if equal
         if registers_values['FLAGS'] == '0000000000000001':
-            print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
-            return int(line[8:16], 2)
-    
-    elif line[:5] =='10011':    #halt
-        print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
+            print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
+            mem_address = int(line[8:16], 2)
+            return mem_address
+
+    elif line[:5] == '10011':  # halt
+        pass
 
     if line[:5] != '01110':
         registers_values['FLAGS'] = '0000000000000000'  # Flags reset after every non-compare instruction
-    print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
-    return input_code.index(line) + 1
+    print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
+    mem_address += 1
+    return mem_address
 
 
 # List to store the input binary machine codes where each machine code has its index as memory address
-input_code = ['0001000000000101', '0001000100001010', '0001001000000001', '0000000000000010', '0111000000000001',
-              '1000000000000011', '1001100000000000']
-'''
+input_code = []
+
 while True:
     try:
         line = input()
         input_code.append(line)
     except EOFError:
         break
-'''
 
 
 i = 0
 while input_code[i] != '1001100000000000':
     i = process(input_code[i])
 
+print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
+
 # Memory dump
 for line in input_code:
     print(line)
 
+for variable in variables.values():
+    print(variable)
+
 # Print the empty memory dumps to fill the 256 lines
-for dump in range(0, 256 - len(input_code)):
+for dump in range(0, 256 - len(input_code) - len(variables)):
     print('0000000000000000')
