@@ -118,24 +118,27 @@ def process(line):
         registers_values[registers[line[10:13]]] = string + ""
 
     elif line[:5] == '01111':  # Unconditional Jump
+        print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
         return int(line[8:16], 2)
 
     elif line[:5] == '10000':  # jump if less than
         if registers_values['FLAGS'] == '0000000000000100':
             print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
             return int(line[8:16], 2)
-    elif line[:5] == 'jgt':
-        if registers_values['FLAGS'] == '0000000000000100':
+    
+    elif line[:5] == '10001':   #jump if greater than
+        if registers_values['FLAGS'] == '0000000000000010':
             print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
             return int(line[8:16], 2)
-    '''
-    elif words[0] == 'je':
-        # if registers_values['FLAGS'] == '0000000000000001':
-        s += '000'
-        if words[1] in labels.keys():
-            s += binary("% s" % labels[words[1]], 8)
-            print(s)
-    '''
+    
+    elif line[:5] == '10010':   #jump if equal
+        if registers_values['FLAGS'] == '0000000000000001':
+            print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
+            return int(line[8:16], 2)
+    
+    elif line[:5] =='10011':    #halt
+        print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
+
     if line[:5] != '01110':
         registers_values['FLAGS'] = '0000000000000000'  # Flags reset after every non-compare instruction
     print(binary(input_code.index(line), 8), " ".join(str(value) for value in registers_values.values()))
@@ -153,11 +156,8 @@ while True:
     except EOFError:
         break
 '''
-'''
-for i in range(len(input_codes)):
-    if(input_codes[i][0:5]=='01111' or input_codes[i][0:5]=='10000' or input_codes[i][0:5]=='10001' or input_codes[i][0:5]=='10010'):
-        loops[binary(i,8)]=False
-'''
+
+
 i = 0
 while input_code[i] != '1001100000000000':
     i = process(input_code[i])
