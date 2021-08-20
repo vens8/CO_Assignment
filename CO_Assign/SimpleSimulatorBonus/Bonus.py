@@ -26,10 +26,10 @@ registers_values = {
     'R6': '0000000000000000',
     'FLAGS': '0000000000000000',
 }
-variables = {}
-mem_address, cycle = 0, 0
-x, y = [], []
 
+variables = {}   # a dictionary to store the register values and its mem_address
+mem_address, cycle = 0, 0   #initialized variables to store the number of cycles amd mem_address for every line
+x, y = [], []  # a pair of list to store the values of the above variables for the plotting of the Scatter plot graph
 
 # Convert a string decimal into the equivalent binary of custom bits
 def binary(number, bit):
