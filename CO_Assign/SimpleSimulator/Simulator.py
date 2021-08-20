@@ -1,3 +1,7 @@
+# Sumit Soni 2020136
+# Aayush Kumar 2020008
+# Venkata Sai Rahul Maddula 2020149
+
 registers = {
     '000': 'R0',
     '001': 'R1',
@@ -24,7 +28,7 @@ variables = {}
 mem_address = 0
 
 
-# Convert a string decimal into the equivalent binary of custom bits
+# Convert a decimal (any type) into the equivalent binary of custom bits
 def binary(number, bit):
     binary = bin(int(number)).replace('0b', '')[::-1]
     if len(binary) > bit:
@@ -126,26 +130,23 @@ def process(line):
         mem_address = int(line[8:16], 2)
         return mem_address
 
-    elif line[:5] == '10000':  # jump if less than
+    elif line[:5] == '10000':  # Jump if less than
         if registers_values['FLAGS'] == '0000000000000100':
             print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
             mem_address = int(line[8:16], 2)
             return mem_address
 
-    elif line[:5] == '10001':  # jump if greater than
+    elif line[:5] == '10001':  # Jump if greater than
         if registers_values['FLAGS'] == '0000000000000010':
             print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
             mem_address = int(line[8:16], 2)
             return mem_address
 
-    elif line[:5] == '10010':  # jump if equal
+    elif line[:5] == '10010':  # Jump if equal
         if registers_values['FLAGS'] == '0000000000000001':
             print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
             mem_address = int(line[8:16], 2)
             return mem_address
-
-    elif line[:5] == '10011':  # halt
-        pass
 
     if line[:5] != '01110':
         registers_values['FLAGS'] = '0000000000000000'  # Flags reset after every non-compare instruction
@@ -157,6 +158,7 @@ def process(line):
 # List to store the input binary machine codes where each machine code has its index as memory address
 input_code = []
 
+# Take input and store in a list
 while True:
     try:
         line = input()
@@ -164,11 +166,11 @@ while True:
     except EOFError:
         break
 
-
 i = 0
 while input_code[i] != '1001100000000000':
     i = process(input_code[i])
 
+# Print for halt at the end
 print(binary(mem_address, 8), " ".join(str(value) for value in registers_values.values()))
 
 # Memory dump
@@ -178,6 +180,6 @@ for line in input_code:
 for variable in variables.values():
     print(variable)
 
-# Print the empty memory dumps to fill the 256 lines
+# Fill remaining memory dump of 256 lines
 for dump in range(0, 256 - len(input_code) - len(variables)):
     print('0000000000000000')
