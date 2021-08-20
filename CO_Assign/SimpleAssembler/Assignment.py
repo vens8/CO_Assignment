@@ -1,4 +1,3 @@
-from sys import stdin
  # Sumit Soni 2020136
  # Aayush Kumar 2020008
  # Venkata Sai Rahul Maddula 2020149
@@ -76,14 +75,15 @@ registers_values = {
 line_number = 0
 mem_address = 0
 # Dictionary to store the values of the memory addresses
-variables = {}  # its key will be the variable name and value will be the memory address
-labels = {}  # key will be the label name and value will be the memory address
-halt_instructions = []  # this will store the various number of halt statements encountered stored according to line number
-errors = {}
+variables = {}  # Variable name as key memory address as value
+labels = {}  # Label name as key and memory address as value
+halt_instructions = []  # Line numbers of all occurring halt statements
+errors = {}  # Line number as key and Error statement as value
 flag_parse = False
-flag_process = False
-temp_labels = {}  # temporary labels for testing
-temp_variables = {}
+temp_labels = {}  # temporary labels for accessing labels before definition
+temp_variables = {}  # temporary variables for accessing labels before definition
+undefined_labels = {}
+undefined_variables = {}
 
 
 def parse(line):
@@ -172,7 +172,9 @@ def parse(line):
                             2] not in registers.keys() and words[2] not in labels.keys() and words[
                             2] not in temp_labels.keys():
                             temp_variables[
-                                words[2]] = -1  # this is done to check if the defination of variable exists or not
+                                words[2]] = -1  # check if the variable definition exists
+                            if words[2] not in undefined_variables:
+                                undefined_variables[words[2]] = line_number
                             mem_address += 1
                         elif words[2] in variables.keys():
                             mem_address += 1
@@ -194,6 +196,8 @@ def parse(line):
                 if len(words) == 2:
                     if words[1] not in labels.keys():
                         temp_labels[words[1]] = mem_address
+                        if words[1] not in undefined_labels:
+                            undefined_labels[words[1]] = line_number
                     if words[1] in variables.keys():
                         errors[line_number] = "Wrong syntax used for instructions"
                     else:
@@ -412,10 +416,6 @@ def process(line):
             registers_values[words[1]] = registers_values[words[2]] + ""
             print(s)
 
-    # print(s)  # print the machine code for every command
-    # print(registers_values)
-    # print(variables)
-
 '''
 with open('input.txt', 'rt') as inputfile:
     command = inputfile.readline()
@@ -464,18 +464,12 @@ else:
                 for line in input_code:
                     process(line)
             else:
-                for i in temp_labels:
-                    print(f"Error in line {line_number}: {i} is not defined")
+                for i in undefined_labels:
+                    if i in temp_labels:
+                        print(f"Error in line {undefined_labels[i]}: {i} is not defined")
         else:
-            for i in temp_variables:
-                print(f"Error in line {line_number}: {i} is not defined")
+            for i in undefined_variables:
+                if i in temp_variables:
+                    print(f"Error in line {undefined_variables[i]}: {i} is not defined")
 for key in errors:
     print(f'Error in line {key}: {errors[key]}')
-
-# Test working of binary() for overflow values
-# print(binary(int(binary('65000', 16), 2) * int(binary('64000', 16), 2), 16))
-# print(len(binary(int(binary('65000', 16), 2) + int(binary('64000', 16), 2), 16)))
-
-# print(labels)
-# print(registers_values)
-# print(variables)
