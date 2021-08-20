@@ -218,7 +218,7 @@ def parse(line):
         errors[line_number] = "No instruction found"
 
 
-# Convert a string decimal into the equivalent binary of custom bits
+# Convert a decimal (any type) into the equivalent binary of custom bits
 def binary(number, bit):
     binary = bin(int(number)).replace('0b', '')[::-1]
     if len(binary) > bit:
@@ -424,15 +424,15 @@ with open('input.txt', 'rt') as inputfile:
         # parse(command)
         command = inputfile.readline()
 '''
-input_code = []
-
+input_code = ['mov R0 $5','mov R1 $10','mov R2 $1','label: add R0 R0 R2','cmp R0 R1','jlt label','hlt']
+'''
 while True:
     try:
         line = input()
         input_code.append(line)
     except EOFError:
         break
-
+'''
 for line in input_code:
     parse(line)
 
