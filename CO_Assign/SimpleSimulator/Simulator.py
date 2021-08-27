@@ -81,7 +81,7 @@ def process(line):
             int(registers_values[registers[line[10:13]]], 2) * int(registers_values[registers[line[13:16]]], 2), 16)
 
     elif line[:5] == '00111':  # Divide
-        if int(registers_values[registers[line[10:13]]], 2) / int(registers_values[registers[line[13:16]]], 2) < 65535:
+        if int(registers_values[registers[line[10:13]]], 2) / int(registers_values[registers[line[13:16]]], 2) <= 65535:
             registers_values['R0'] = binary(
                 int(registers_values[registers[line[10:13]]], 2) / int(registers_values[registers[line[13:16]]], 2), 16)
             registers_values['R1'] = binary(
@@ -91,14 +91,14 @@ def process(line):
             registers_values['FLAGS'] = '0000000000001000'
 
     elif line[:5] == '01001':  # Left shift
-        if int(registers_values[registers[line[5:8]]], 2) << int(registers_values[registers[line[8:16]]], 2) < 65535:
+        if int(registers_values[registers[line[5:8]]], 2) << int(registers_values[registers[line[8:16]]], 2) <= 65535:
             registers_values[registers[line[5:8]]] = binary(
                 int(registers_values[registers[line[5:8]]], 2) << int(registers_values[registers[line[8:16]]], 2), 16)
         else:
             registers_values['FLAGS'] = '0000000000001000'
 
     elif line[:5] == '01000':  # Right shift
-        if int(registers_values[registers[line[5:8]]], 2) >> int(registers_values[registers[line[8:16]]], 2) < 65535:
+        if int(registers_values[registers[line[5:8]]], 2) >> int(registers_values[registers[line[8:16]]], 2) <= 65535:
             registers_values[registers[line[5:8]]] = binary(
                 int(registers_values[registers[line[5:8]]], 2) >> int(registers_values[registers[line[8:16]]], 2), 16)
         else:
